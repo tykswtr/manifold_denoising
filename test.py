@@ -94,9 +94,13 @@ def to_var(x):
 n_0 = 3
 N = 100
 d = 2
-curvature = 0.0
+
+curvature = [0.1, 1]
+
 width = 0.1
-sigma = 10
+sigma = 100
+
+glue_num = 3
 
 # We generate grid of equal space.
 N_d = int(np.ceil(N**(d**-1)))
@@ -108,7 +112,7 @@ ker_choice = "Laplace"
 # ker_choice = "RBF"
 # x = generate_clean(N, n_0, d, curvature)
 # x = generate_clean_Fourier(N_shape, n_0, d, curvature)
-x = generate_clean(N_shape, n_0, d, curvature, sigma, width, method, ker_choice)
+x, glued_pair = generate_clean(N_shape, n_0, d, curvature, sigma, glue_num, width, method, ker_choice)
 print(x.shape)
 
 std = 0.
@@ -148,6 +152,15 @@ plt.title('FunctYion Visualization with Grid Overlay')
 # Overlay the original grid points
 
 plt.scatter(grid_vectors[:, 0], grid_vectors[:, 1], color='red', s=10, label='Grid Points')
+
+colors = plt.cm.viridis(np.linspace(0, 1, len(glued_pair[:, 0, 0])))
+# plt.scatter(glued_pair[:, 0, 0], glued_pair[:, 0, 1], c=colors, s=20, label='Glued Points')
+# plt.scatter(glued_pair[:, 1, 0], glued_pair[:, 1, 1], c=colors, s=20, label='Glued Points')
+for i in range(len(glued_pair[:, 0, 0])):
+    plt.scatter(glued_pair[i, 0, 0], glued_pair[i, 0, 1], color=colors[i], label=f'Point {i}')
+    plt.scatter(glued_pair[i, 1, 0], glued_pair[i, 1, 1], color=colors[i], label=f'Point {i}')
+    plt.text(glued_pair[i, 0, 0], glued_pair[i, 0, 1], f' {i}', color='black', ha='right', va='bottom')
+    plt.text(glued_pair[i, 1, 0], glued_pair[i, 1, 1], f' {i}', color='black', ha='right', va='bottom')
 
 plt.xlabel('X')
 plt.ylabel('Y')

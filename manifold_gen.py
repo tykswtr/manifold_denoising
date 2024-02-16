@@ -49,7 +49,7 @@ def noise_addition(x, std, sphere_restriction=False):
     return x+z
 
 
-def generate_clean(N_shape, n_0, d, curvature, sigma, width, method, kernel_choice, sphere_restriction=False):
+def generate_clean(N_shape, n_0, d, curvature, sigma, glue_num, width, method, kernel_choice, sphere_restriction=False):
 
     if method == "Fourier":
         gen_func = generate_Fourier_func
@@ -62,7 +62,7 @@ def generate_clean(N_shape, n_0, d, curvature, sigma, width, method, kernel_choi
 
     grid_vectors = generate_grid(N_shape)
 
-    return gen_func(n_0, curvature, sigma, width, N_shape, grid_vectors, kernel_choice)
+    return gen_func(n_0, d, curvature, sigma, glue_num, width, N_shape, grid_vectors, kernel_choice)
 
 
 def generate_grid(N_shape):
@@ -109,13 +109,15 @@ def generate_single_Fourier_func(K, N_shaped, z_in):
 
 
 # Generate Kernel function with smoothness parameter K
-def generate_Ker_func(n_0, K, sigma, width, N_shape, grid_vectors, kernel_choice):
+def generate_Ker_func(n_0, d, K, sigma, glue_num, width, N_shape, grid_vectors, kernel_choice):
     data = np.zeros((n_0, *N_shape))
 
     # Define kernel
-    thresh = width**2
+    thresh = width
 
-    kernel_matrix = compute_kernel_matrix(grid_vectors, thresh, kernel_choice, sigma=sigma, spiky_value=K)
+    glued_pairs = generate_random_point_pairs(glue_num, d)
+
+    kernel_matrix = compute_kernel_matrix(grid_vectors, glued_pairs, thresh, kernel_choice, sigma=sigma, spike=K)
 
     # optional: display the kernel matrix
     plt.imshow(kernel_matrix, interpolation='nearest', cmap='viridis')
@@ -129,7 +131,14 @@ def generate_Ker_func(n_0, K, sigma, width, N_shape, grid_vectors, kernel_choice
     plt.savefig("kernel_"+str(K)+".png")
 
     data = np.random.multivariate_normal(np.zeros(len(grid_vectors)), kernel_matrix, n_0)
-    return data
+    return data, glued_pairs
+
+
+def generate_random_point_pairs(glue_num, d):
+    # Generate random numbers within [-1, 1] with the shape (glue_num, 2, d)
+    # This creates glue_num pairs, each pair consisting of two points in d-dimensional space
+    random_points = np.random.uniform(low=-1, high=1, size=(glue_num, 2, d))
+    return random_points
 
 
 def euclidean_distance(x, y):
@@ -168,7 +177,9 @@ def compute_adjacency_matrix(grid_vectors, thresh):
     return adjacency_matrix
 
 
-def compute_kernel_matrix(grid_vectors, thresh, kernel_choice, sigma=1.0, spiky_value=1.0):
+def compute_kernel_matrix(grid_vectors, glued_pairs, thresh, kernel_choice, sigma=1.0, spike=None):
+    if spike is None:
+        spike = [1, 1]
     n_points = len(grid_vectors)
     kernel_matrix = np.zeros((n_points, n_points))
     adjacency = compute_adjacency_matrix(grid_vectors, thresh)
@@ -176,11 +187,17 @@ def compute_kernel_matrix(grid_vectors, thresh, kernel_choice, sigma=1.0, spiky_
     for i in range(n_points):
         for j in range(n_points):
             if kernel_choice=="Laplace":
-                kernel_matrix[i, j] = laplace_kernel(grid_vectors[i], grid_vectors[j], sigma)
+                kernel_matrix[i, j] = spike[0] * laplace_kernel(grid_vectors[i], grid_vectors[j], sigma)
             else:
-                kernel_matrix[i, j] = gaussian_kernel(grid_vectors[i], grid_vectors[j], sigma)
-            if adjacency[i, j] == 1:
-                kernel_matrix[i, j] += spiky_value  # Spiky kernel value for adjacent points
+                kernel_matrix[i, j] = spike[0] * gaussian_kernel(grid_vectors[i], grid_vectors[j], sigma)
+
+    for i in range(n_points):
+        for g_i in range(len(glued_pairs)):
+            if np.sqrt(np.sum((grid_vectors[i] - glued_pairs[g_i, 0, :]) ** 2)) <= thresh:
+                for j in range(n_points):
+                    if np.sqrt(np.sum((grid_vectors[j] - glued_pairs[g_i, 1, :]) ** 2)) <= thresh:
+                        kernel_matrix[i, j] += spike[1] * gaussian_kernel(grid_vectors[i], grid_vectors[j], thresh)
+
 
     return kernel_matrix
 
