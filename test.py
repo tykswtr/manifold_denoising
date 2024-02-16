@@ -95,6 +95,7 @@ n_0 = 3
 N = 400
 d = 2
 curvature = 0.0
+sigma = 1.0
 
 # We generate grid of equal space.
 N_d = int(np.ceil(N**(d**-1)))
@@ -104,7 +105,7 @@ N_shape = np.repeat(N_d, d)
 method = "Ker"
 # x = generate_clean(N, n_0, d, curvature)
 # x = generate_clean_Fourier(N_shape, n_0, d, curvature)
-x = generate_clean(N_shape, n_0, d, curvature, method)
+x = generate_clean(N_shape, n_0, d, curvature, sigma, method)
 print(x.shape)
 
 std = 0.

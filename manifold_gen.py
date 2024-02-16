@@ -49,7 +49,7 @@ def noise_addition(x, std, sphere_restriction=False):
     return x+z
 
 
-def generate_clean(N_shape, n_0, d, curvature, method="Fourier", sphere_restriction=False):
+def generate_clean(N_shape, n_0, d, curvature, sigma, method="Fourier", sphere_restriction=False):
 
     if method == "Fourier":
         gen_func = generate_Fourier_func
@@ -62,7 +62,7 @@ def generate_clean(N_shape, n_0, d, curvature, method="Fourier", sphere_restrict
 
     grid_vectors = generate_grid(N_shape)
 
-    return gen_func(n_0, curvature, N_shape, grid_vectors)
+    return gen_func(n_0, curvature, sigma, N_shape, grid_vectors)
 
 
 def generate_grid(N_shape):
@@ -109,13 +109,13 @@ def generate_single_Fourier_func(K, N_shaped, z_in):
 
 
 # Generate Kernel function with smoothness parameter K
-def generate_Ker_func(n_0, K, N_shape, grid_vectors):
+def generate_Ker_func(n_0, K, sigma, N_shape, grid_vectors):
     data = np.zeros((n_0, *N_shape))
 
     # Define kernel
     thresh = 2 * (1./np.max(N_shape))**2
 
-    kernel_matrix = compute_kernel_matrix(grid_vectors, thresh, sigma=1.0, spiky_value=K)
+    kernel_matrix = compute_kernel_matrix(grid_vectors, thresh, sigma=sigma, spiky_value=K)
 
     # optional: display the kernel matrix
     plt.imshow(kernel_matrix, interpolation='nearest', cmap='viridis')
