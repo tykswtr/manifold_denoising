@@ -95,9 +95,9 @@ n_0 = 3
 N = 100
 d = 2
 
-curvature = [0.1, 1]
+curvature = [1, 0.5]
 
-width = 0.1
+width = 0.3
 sigma = 100
 
 glue_num = 3
@@ -108,8 +108,8 @@ N_shape = np.repeat(N_d, d)
 
 # method = "Fourier"
 method = "Ker"
-ker_choice = "Laplace"
-# ker_choice = "RBF"
+# ker_choice = "Laplace"
+ker_choice = "RBF"
 # x = generate_clean(N, n_0, d, curvature)
 # x = generate_clean_Fourier(N_shape, n_0, d, curvature)
 x, glued_pair = generate_clean(N_shape, n_0, d, curvature, sigma, glue_num, width, method, ker_choice)
