@@ -49,7 +49,7 @@ def noise_addition(x, std, sphere_restriction=False):
     return x+z
 
 
-def generate_clean(N_shape, n_0, d, curvature, sigma, method="Fourier", sphere_restriction=False):
+def generate_clean(N_shape, n_0, d, curvature, sigma, method, kernel_choice, sphere_restriction=False):
 
     if method == "Fourier":
         gen_func = generate_Fourier_func
@@ -62,7 +62,7 @@ def generate_clean(N_shape, n_0, d, curvature, sigma, method="Fourier", sphere_r
 
     grid_vectors = generate_grid(N_shape)
 
-    return gen_func(n_0, curvature, sigma, N_shape, grid_vectors)
+    return gen_func(n_0, curvature, sigma, N_shape, grid_vectors, kernel_choice)
 
 
 def generate_grid(N_shape):
@@ -109,13 +109,13 @@ def generate_single_Fourier_func(K, N_shaped, z_in):
 
 
 # Generate Kernel function with smoothness parameter K
-def generate_Ker_func(n_0, K, sigma, N_shape, grid_vectors):
+def generate_Ker_func(n_0, K, sigma, N_shape, grid_vectors, kernel_choice):
     data = np.zeros((n_0, *N_shape))
 
     # Define kernel
     thresh = 2 * (1./np.max(N_shape))**2
 
-    kernel_matrix = compute_kernel_matrix(grid_vectors, thresh, sigma=sigma, spiky_value=K)
+    kernel_matrix = compute_kernel_matrix(grid_vectors, thresh, kernel_choice, sigma=sigma, spiky_value=K)
 
     # optional: display the kernel matrix
     plt.imshow(kernel_matrix, interpolation='nearest', cmap='viridis')
@@ -168,14 +168,17 @@ def compute_adjacency_matrix(grid_vectors, thresh):
     return adjacency_matrix
 
 
-def compute_kernel_matrix(grid_vectors, thresh, sigma=1.0, spiky_value=1.0):
+def compute_kernel_matrix(grid_vectors, thresh, kernel_choice, sigma=1.0, spiky_value=1.0):
     n_points = len(grid_vectors)
     kernel_matrix = np.zeros((n_points, n_points))
     adjacency = compute_adjacency_matrix(grid_vectors, thresh)
 
     for i in range(n_points):
         for j in range(n_points):
-            kernel_matrix[i, j] = gaussian_kernel(grid_vectors[i], grid_vectors[j], sigma)
+            if kernel_choice=="Laplace":
+                kernel_matrix[i, j] = laplace_kernel(grid_vectors[i], grid_vectors[j], sigma)
+            else:
+                kernel_matrix[i, j] = gaussian_kernel(grid_vectors[i], grid_vectors[j], sigma)
             if adjacency[i, j] == 1:
                 kernel_matrix[i, j] += spiky_value  # Spiky kernel value for adjacent points
 
