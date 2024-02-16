@@ -33,3 +33,8 @@ def weights_init(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+
+
+def surf_plot(data):
+    """Plot 2d proj of data."""
+    return
