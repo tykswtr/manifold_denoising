@@ -201,6 +201,10 @@ def compute_kernel_matrix(grid_vectors, glued_pairs, thresh, kernel_choice, sigm
                                                                           grid_vectors[j] - glued_pairs[g_i, 1, :], sigma)
                         kernel_matrix[j, i] = kernel_matrix[j, i] + spike[1] * gaussian_kernel(grid_vectors[i] - glued_pairs[g_i, 0, :],
                                                                           grid_vectors[j] - glued_pairs[g_i, 1, :], sigma)
+    for i in range(n_points):
+        for g_i in range(len(glued_pairs)):
+            if np.sqrt(np.sum((grid_vectors[i] - glued_pairs[g_i, 1, :]) ** 2)) <= thresh:
+                kernel_matrix[i, i] = kernel_matrix[i, i] + spike[1]
 
 
     return kernel_matrix

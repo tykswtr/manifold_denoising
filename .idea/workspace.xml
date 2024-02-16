@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="159ac78f-2ece-42e4-9288-80fb0c02001f" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/manifold_gen.py" beforeDir="false" afterPath="$PROJECT_DIR$/manifold_gen.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -124,7 +123,7 @@
       <option name="presentableId" value="Default" />
       <updated>1707433112567</updated>
       <workItem from="1707433115430" duration="7322000" />
-      <workItem from="1707505313805" duration="24015000" />
+      <workItem from="1707505313805" duration="24096000" />
     </task>
     <servers />
   </component>
