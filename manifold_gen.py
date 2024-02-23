@@ -1,144 +1,194 @@
-# In this file we define various manifold generation scheme where we can control the complexity of generated manifolds
-
-import torch
-import torch.autograd as autograd
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-import torch.optim as optim
 import numpy as np
-
-
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
+import torch
+import math
+from torch.utils.data import Dataset, DataLoader
+from torch.distributions.multivariate_normal import MultivariateNormal
 
 import matplotlib.pyplot as plt
 
 
-# def generate_sphere(N, n_0, d):
-#   Base_kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(1e-1, 10.0))
-#   x_ker = torch.zeros((N, N))
-#   for id_N in range(N):
-#     x_ker[id_N, id_N-1] = kappa
-#     x_ker[id_N, id_N+1] = kappa
-#   x = []
-#   gpr = GaussianProcessRegressor(kernel=kernel, random_state=0)
-#   return x
+def generate_clean(n_0, d, n_points, sigma, glue_num, base_type, method, grid_type='uniform', sphere_restriction=False):
+    """
+    Generates clean data points on a manifold with specified properties.
 
-
-# def generate_clean(N, n_0, d, curvature, sphere_restriction=False):
-#     """
-#     Generate data from a smooth manifold
-#
-#     :param N: number of generated data point
-#     :param n_0: ambient dimension, dimension of the data
-#     :param d: intrinsic dimension, dimension of the manifold
-#     :param curvature: "rough" estimate of the manifold curvature
-#     :param sphere_restriction:
-#     :return:
-#     """
-#     # x_base = generate_sphere(N, n_0, d)
-#     x = np.zeros((N, N))
-#     # K = matrix()
-#     return x
-
-
-def noise_addition(x, std, sphere_restriction=False):
-    """Add independent Gaussian noise to data."""
-    z = std * np.random.randn(*x.shape)
-    return x+z
-
-
-def generate_clean(N_shape, n_0, d, curvature, sigma, glue_num, width, method, kernel_choice, sphere_restriction=False):
-
-    if method == "Fourier":
-        gen_func = generate_Fourier_func
-    elif method == "Ker":
+    Parameters:
+    - n_0 (int): Dimension of the ambient space.
+    - d (int): Dimension of the manifold.
+    - n_points (int): Number of data points to generate.
+    - sigma (float): Gaussian Kernel parameter.
+    - glue_num (int): Number of random points to "glue" together in the manifold.
+    - base_type (str): The base shape of the manifold ('circle', 'sphere', 'torus', etc.).
+    - method (str): Method to use for generating the manifold ('Ker' for Kernel).
+    - kernel_choice (str): Choice of kernel function ('Laplace' or 'Gaussian').
+    - grid_type (str, optional): Type of grid to generate ('uniform' or 'random'). Defaults to 'uniform'.
+    - sphere_restriction (bool, optional): Restricts the points to a sphere if True. Defaults to False.
+    """
+    if method == "Ker":
         gen_func = generate_Ker_func
     else:
-        gen_func = "Fourier"
+        raise NotImplementedError("Currently, only 'Ker' method is implemented.")
 
     # define intrinsic coordinates
+    grid_vectors = generate_grid(base_type, d, n_points, grid_type)
 
-    grid_vectors = generate_grid(N_shape)
+    # generate random pairs of points
+    glued_pairs = generate_random_point_pairs(base_type, d, glue_num, grid_type)
 
-    return gen_func(n_0, d, curvature, sigma, glue_num, width, N_shape, grid_vectors, kernel_choice)
-
-
-def generate_grid(N_shape):
-    # Generate points for each dimension
-    points = [np.linspace(-1, 1, n) for n in N_shape]
-    # Generate the grid using numpy's meshgrid function
-    # The * operator unpacks the points list into arguments for meshgrid
-    grids = np.meshgrid(*points, indexing='ij')
-    # Reshape the grids to have all coordinates for a point grouped together
-    grid_vectors = np.stack(grids, axis=-1).reshape(-1, len(N_shape))
-    return grid_vectors
-
-# # Generate Function value through given kernel
-# def generate_clean_ker(N, n_0, d, curvature, sphere_restriction=False):
-#     n_coord = 10
-#     nx, ny = n_coord
-#     x = np.linspace(-1, 1, nx)
-#     y = np.linspace(-1, 1, ny)
-#     xv, yv = np.meshgrid(x, y)
-#     data = np.zeros(())
-#     for coor_id in np.range(n_0):
-#         data[:, coor_id] = 0
-#     return data
+    return gen_func(n_0, d, n_points, sigma, glued_pairs, grid_vectors, base_type)
 
 
-# Generate Fourier function with degree K
-def generate_Fourier_func(n_0, K, N_shaped, z_in):
-    data = np.zeros((n_0, *N_shaped))
+# def generate_grid(N_shape):
+#     # Generate points for each dimension
+#     points = [np.linspace(-1, 1, n) for n in N_shape]
+#     # Generate the grid using numpy's meshgrid function
+#     # The * operator unpacks the points list into arguments for meshgrid
+#     grids = np.meshgrid(*points, indexing='ij')
+#     # Reshape the grids to have all coordinates for a point grouped together
+#     grid_vectors = np.stack(grids, axis=-1).reshape(-1, len(N_shape))
+#     return grid_vectors
 
-    for coor_id in np.arange(n_0):
-        data[coor_id, :, :] = generate_single_Fourier_func(K, N_shaped, z_in)
-    return data
+
+def generate_grid(base_type, d, n_points, grid_type='uniform'):
+    """
+    Generates a grid for a d-dimensional manifold based on the specified base type.
+
+    Parameters:
+    - base_type (str): Type of the base manifold ('rectangle', 'circle', 'sphere', 'torus').
+    - dims (list of float): Dimensions of the base manifold. For circles, spheres, and tori, this defines their radii.
+    - n_points (int): Number of points to generate along each axis for 'rectangle'. Total number of points for others.
+    - device (str): The device to run computations on ('cpu' or 'cuda').
+
+    Returns:
+    - torch.Tensor: Generated points on the manifold.
+    """
+
+    if base_type == 'rectangle':
+        grid_points = generate_rectangle(n_points, d, grid_type=grid_type)
+    elif base_type == 'ball':
+        grid_points = generate_ball(n_points, d, grid_type=grid_type)
+    elif base_type == 'sphere':
+        grid_points = generate_sphere(n_points, d, grid_type=grid_type)
+    elif base_type == 'torus':
+        grid_points = generate_torus(n_points, d, grid_type=grid_type)
+    else:
+        raise ValueError(f"Unsupported base type: {base_type}")
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return grid_points.to(device)
 
 
-def generate_single_Fourier_func(K, N_shaped, z_in):
-    z = np.zeros(N_shaped)
-    for k1 in np.arange(np.floor(np.sqrt(K)).astype(int) + 1):
-        for k2 in np.arange(np.floor(np.sqrt(K - k1 ** 2)).astype(int) + 1):
-            fourier_coeff = np.random.randn(1)[0]
-            for i in np.arange(N_shaped[0]):
-                for j in np.arange(N_shaped[1]):
-                    z[i, j] += fourier_coeff * np.cos(k1 * np.pi * z_in[0][i] + k2 * np.pi * z_in[1][j])
-    return z
+def generate_rectangle(n_points, d, grid_type='uniform'):
+    # if isinstance(dims, torch.Tensor) and dims.dim() == 0:
+    #     np.repeat(1, dims)
+    # d = len(dims)
+    if grid_type == 'uniform':
+        n_points_per_dim = int(torch.ceil(n_points ** (1 / d)))
+        # Generate a linear space grid for each dimension
+        grids = [torch.linspace(-1, 1, n_points_per_dim) for i in range(d)]
+        # Cartesian product to form a grid
+        mesh = torch.meshgrid(grids)
+        grid_points = torch.stack(mesh, dim=-1).reshape(-1, d)
+    elif grid_type == 'random':
+        # Generate random points within the specified bounds for each dimension
+        grid_points = torch.cat([torch.rand(n_points, 1) * 2 - 1 for i in range(d)], dim=1)
+    else:
+        raise ValueError("Unsupported grid type: {}".format(grid_type))
+
+    return grid_points
+
+
+def generate_ball(n_points, d=2, grid_type='uniform'):
+    radius = 1.0
+    if grid_type == 'uniform':
+        volume_ratio = (torch.pi ** (d / 2)) / (math.gamma(d / 2 + 1))  # Volume ratio of ball to cube in d dimensions
+        cube_edge_length = 2 * radius  # The edge length of the cube
+        cube_volume = cube_edge_length ** d  # Volume of the cube
+        ball_volume = volume_ratio * cube_volume  # Volume of the ball
+        estimated_total_points = int(n_points / (ball_volume / cube_volume))
+
+        # Generate a uniform grid in the cube
+        n_per_dim = int(round(estimated_total_points ** (1 / d)))  # Points per dimension
+        grid = torch.linspace(-radius, radius, steps=n_per_dim)
+        meshes = torch.meshgrid(*([grid] * d))  # Create a meshgrid for d dimensions
+        cube_points = torch.stack(meshes, dim=-1).reshape(-1, d)  # Flatten the grid
+
+        # Filter points to keep only those within the ball's radius
+        distances = torch.norm(cube_points, p=2, dim=1)
+        ball_points = cube_points[distances <= radius]
+    elif grid_type == 'random':
+        # Generate random points within the specified bounds for each dimension
+        ball_points = torch.rand((n_points, d)) * 2 * radius - radius
+        norms = torch.norm(ball_points, p=2, dim=1, keepdim=True)
+        ball_points = ball_points / norms * (torch.rand(n_points, 1) ** (1 / d) * radius)
+    else:
+        raise ValueError("Unsupported grid type: {}".format(grid_type))
+
+    return ball_points
+
+
+def generate_sphere(n_points, d=2, grid_type='uniform'):
+    """Generates points on the surface of a d-dimensional sphere (n-sphere)."""
+    radius = 1.0
+    if grid_type == 'random':
+        # Generate points in d-dimensional space
+        points = torch.randn(n_points, d)
+        # Normalize points to lie on the surface of the sphere
+        norms = torch.norm(points, p=2, dim=1, keepdim=True)
+        sphere_points = (points / norms) * radius
+    else:
+        raise ValueError("Unsupported grid type: {}".format(grid_type))
+
+    return sphere_points
+
+
+def generate_torus(n_points, d=2, grid_type='uniform'):
+    """Generates evenly spaced points on the surface of a d-dimensional torus (n-torus)."""
+    if grid_type == 'uniform':
+        angle_grids = [torch.linspace(0, 2 * torch.pi, n_points) for i in range(d)]
+        mesh = torch.meshgrid(angle_grids)
+        torus_points = torch.stack(mesh, dim=-1).reshape(-1, d)
+    elif grid_type == 'random':
+        torus_points = torch.rand(n_points, d) * 2 * torch.pi
+    else:
+        raise ValueError("Unsupported grid type: {}".format(grid_type))
+
+    return torus_points
 
 
 # Generate Kernel function with smoothness parameter K
-def generate_Ker_func(n_0, d, K, sigma, glue_num, width, N_shape, grid_vectors, kernel_choice):
-    data = np.zeros((n_0, *N_shape))
+def generate_Ker_func(n_0, d, n_points, sigma, glued_pairs, grid_vectors, base_type, verbose=True):
 
     # Define kernel
-    thresh = width
+    thresh = 0.1 * torch.sqrt(d)
 
-    glued_pairs = generate_random_point_pairs(glue_num, d)
+    kernel_matrix = compute_kernel_matrix(grid_vectors, glued_pairs, base_type, thresh, sigma=sigma)
 
-    kernel_matrix = compute_kernel_matrix(grid_vectors, glued_pairs, thresh, kernel_choice, sigma=sigma, spike=K)
+    if verbose:
+        # optional: display the kernel matrix
+        plt.imshow(kernel_matrix.numpy(), interpolation='nearest', cmap='viridis')
+        plt.colorbar()  # Show a color bar to indicate the scale
+        plt.title("Gaussian Kernel Matrix Visualization")
+        plt.show()
+        # folder_path = "/path/to/your/folder"
+        # full_path = f"{folder_path}/{filename}"
+        plt.savefig("kernel_matrix"+".png")
 
-    # optional: display the kernel matrix
-    plt.imshow(kernel_matrix, interpolation='nearest', cmap='viridis')
-    plt.colorbar()  # Show a color bar to indicate the scale
-    plt.title("Gaussian Kernel Matrix Visualization")
-    plt.xlabel("Index of Point")
-    plt.ylabel("Index of Point")
-    plt.show()
-    # folder_path = "/path/to/your/folder"
-    # full_path = f"{folder_path}/{filename}"
-    plt.savefig("kernel_"+str(K)+".png")
+    mvn = MultivariateNormal(torch.zeros(n_points), covariance_matrix=kernel_matrix)
+    data = mvn.sample(sample_shape=(n_0,))  # Generate n_0 samples
 
-    data = np.random.multivariate_normal(np.zeros(len(grid_vectors)), kernel_matrix, n_0)
-    return data, glued_pairs
+    return data
 
 
-def generate_random_point_pairs(glue_num, d):
-    # Generate random numbers within [-1, 1] with the shape (glue_num, 2, d)
-    # This creates glue_num pairs, each pair consisting of two points in d-dimensional space
-    random_points = np.random.uniform(low=-1, high=1, size=(glue_num, 2, d))
-    return random_points
+# def generate_random_point_pairs(glue_num, d):
+#     # Generate random numbers within [-1, 1] with the shape (glue_num, 2, d)
+#     # This creates glue_num pairs, each pair consisting of two points in d-dimensional space
+#     random_points = np.random.uniform(low=-1, high=1, size=(glue_num, 2, d))
+#     return random_points
+def generate_random_point_pairs(base_type, d, glue_num):
+    random_points = generate_grid(base_type, d, 2*glue_num, grid_type='random')
+    # Reshape the points to make pairs
+    glued_pairs = random_points.view(glue_num, 2, d)
+    return glued_pairs
 
 
 def euclidean_distance(x, y):
@@ -157,61 +207,236 @@ def laplace_kernel(point_i, point_j, sigma=1.0):
     return np.exp(-l1_distance(point_i, point_j) / sigma)
 
 
-def is_adjacent(point_i, point_j, thresh):
-    # Compute the absolute differences in each dimension
-    diff = np.sum((point_i - point_j) ** 2)
-    # Two points are adjacent if exactly one dimension differs by 1 and the rest are 0
-    return diff <= thresh
+def angle_distance(phi_1, phi_2):
+    """Computes the shortest distance between two angles, considering the periodicity."""
+    d = np.pi - np.abs(np.pi - np.abs(phi_1 - phi_2) % (2 * np.pi))
+    return d
 
 
-def compute_adjacency_matrix(grid_vectors, thresh):
-    num_points = len(grid_vectors)
-    adjacency_matrix = np.zeros((num_points, num_points))
-    for i in range(num_points):
-        adjacency_matrix[i, i] = 1
-        for j in range(i + 1, num_points):  # No need to check j < i because the matrix is symmetric
-            # if is_adjacent(grid_vectors[i], grid_vectors[j]):
-            if np.sum((grid_vectors[i] - grid_vectors[j]) ** 2) <= thresh:
-                adjacency_matrix[i, j] = 1
-                adjacency_matrix[j, i] = 1  # Symmetrically assign since adjacency is bidirectional
-    return adjacency_matrix
+# def compute_distances_vectorized(X, Y, metric='euclidean'):
+#     """
+#     Computes the pairwise distances between two sets of vectors, vectorized.
+#
+#     Parameters:
+#     - X: ndarray of shape (n_samples_X, n_features), the first set of vectors.
+#     - Y: ndarray of shape (n_samples_Y, n_features), the second set of vectors.
+#     - metric: str, the distance metric to use. Currently, only 'euclidean' is implemented.
+#
+#     Returns:
+#     - distances: ndarray of shape (n_samples_X, n_samples_Y), the distances between each pair of vectors from X and Y.
+#     """
+#     if metric == 'euclidean':
+#         # Efficient vectorized computation of the Euclidean distance
+#         # Expand dims to broadcast shapes correctly
+#         X_square = np.sum(X**2, axis=1).reshape(-1, 1)
+#         Y_square = np.sum(Y**2, axis=1).reshape(1, -1)
+#         cross_term = np.dot(X, Y.T)
+#         distances = np.sqrt(X_square + Y_square - 2 * cross_term)
+#     else:
+#         raise ValueError(f"Unsupported metric: {metric}")
+#     return distances
 
 
-def compute_kernel_matrix(grid_vectors, glued_pairs, thresh, kernel_choice, sigma=1.0, spike=None):
-    if spike is None:
-        spike = [1, 1]
-    n_points = len(grid_vectors)
-    kernel_matrix = np.zeros((n_points, n_points))
-    adjacency = compute_adjacency_matrix(grid_vectors, thresh)
+def compute_base_distances(X, Y, metric='euclidean'):
+    """
+    Computes the pairwise distances between two sets of vectors using PyTorch with GPU support.
 
-    for i in range(n_points):
-        for j in range(n_points):
-            if kernel_choice=="Laplace":
-                kernel_matrix[i, j] = spike[0] * laplace_kernel(grid_vectors[i], grid_vectors[j], sigma)
-            else:
-                kernel_matrix[i, j] = spike[0] * gaussian_kernel(grid_vectors[i], grid_vectors[j], sigma)
+    Parameters:
+    - X: Tensor of shape (n_samples_X, n_features), the first set of vectors.
+    - Y: Tensor of shape (n_samples_Y, n_features), the second set of vectors.
 
-    for i in range(n_points):
-        for g_i in range(len(glued_pairs)):
-            if np.sqrt(np.sum((grid_vectors[i] - glued_pairs[g_i, 0, :]) ** 2)) <= thresh:
-                kernel_matrix[i, i] = kernel_matrix[i, i] + spike[1]
-                for j in range(n_points):
-                    if np.sqrt(np.sum((grid_vectors[j] - glued_pairs[g_i, 1, :]) ** 2)) <= thresh:
-                        kernel_matrix[i, j] = kernel_matrix[i, j] + spike[1] * gaussian_kernel(grid_vectors[i] - glued_pairs[g_i, 0, :],
-                                                                          grid_vectors[j] - glued_pairs[g_i, 1, :], sigma)
-                        kernel_matrix[j, i] = kernel_matrix[j, i] + spike[1] * gaussian_kernel(grid_vectors[i] - glued_pairs[g_i, 0, :],
-                                                                          grid_vectors[j] - glued_pairs[g_i, 1, :], sigma)
-    for i in range(n_points):
-        for g_i in range(len(glued_pairs)):
-            if np.sqrt(np.sum((grid_vectors[i] - glued_pairs[g_i, 1, :]) ** 2)) <= thresh:
-                kernel_matrix[i, i] = kernel_matrix[i, i] + spike[1]
+    Returns:
+    - distances: Tensor of shape (n_samples_X, n_samples_Y), the distances between each pair of vectors from X and Y.
+    """
+    if metric == 'euclidean':
+        distances = torch.cdist(X, Y, p=2)
+    elif metric == 'laplacian':
+        distances = torch.cdist(X, Y, p=1)
+    elif metric == 'sphere':
+        cos_angles = torch.mm(X, Y.t())
+        cos_angles = torch.clamp(cos_angles, -1, 1)  # Numerical stability
+        distances = torch.acos(cos_angles)
+    elif metric == 'torus':
+        # Ensure angles are within [0, 2*pi]
+        X = X % (2 * torch.pi)
+        Y = Y % (2 * torch.pi)
+        # Compute differences in angles, considering periodic boundary conditions
+        diff = torch.abs(X.unsqueeze(1) - Y)  # Shape: (n_samples_X, n_samples_Y, d)
+        diff = torch.min(diff, 2 * torch.pi - diff)  # Adjust differences to be within [0, pi]
+        distances = torch.norm(diff, p=2, dim=2)
+    else:
+        raise ValueError(f"Unsupported metric: {metric}")
+
+    return distances
 
 
-    return kernel_matrix
+def compute_adjusted_distances(grid_vectors, glued_pairs, metric, thresh):
+    """
+    Computes adjusted distances considering glued pairs as shortcuts.
 
-def generate_single_Ker_func(K, N_shaped, z_in):
+    Parameters:
+    - grid_vectors: Tensor of shape (n_points, n_dims), representing point locations.
+    - glued_pairs: List of tuples, each containing indices (into grid_vectors) of glued points.
+    - thresh: float, the threshold distance to consider a point "close" to a glued point.
+
+    Returns:
+    - adjusted_distances: Tensor, adjusted distances considering glued pairs.
+    """
+    n_points = grid_vectors.shape[0]
+    adjusted_distances = torch.full((n_points, n_points), float('inf'), device=grid_vectors.device)
+
+    for point_a, point_b in glued_pairs:
+
+        # Find points close to point_a and point_b
+        distances_to_a = compute_base_distances(grid_vectors, point_a, metric)
+        distances_to_b = compute_base_distances(grid_vectors, point_b, metric)
+        a_indices = torch.nonzero(distances_to_a <= thresh, as_tuple=True)[0]
+        b_indices = torch.nonzero(distances_to_b <= thresh, as_tuple=True)[0]
+
+        # Compute adjusted distances for points close to point_a and point_b
+        for i in a_indices:
+            for j in b_indices:
+                # direct_distance = torch.norm(grid_vectors[i] - point_a + point_b - grid_vectors[j])
+                direct_distance = compute_base_distances(grid_vectors[i] - point_a, grid_vectors[j] - point_b, metric)
+                adjusted_distances[i, j] = min(adjusted_distances[i, j], direct_distance)
+                adjusted_distances[j, i] = adjusted_distances[i, j]  # Ensure symmetry
+
+    return adjusted_distances
+
+
+def compute_distances(grid_vectors, glued_pairs, base_type, thresh):
+    distance = compute_base_distances(grid_vectors, grid_vectors, base_type)
+    adjusted_distances = compute_adjusted_distances(grid_vectors, glued_pairs, base_type, thresh)
+    return min(distance, adjusted_distances)
+
+
+def compute_kernel_matrix(grid_vectors, glued_pairs, base_type, thresh, sigma=1.0):
+    """
+    Computes the kernel matrix using a specified kernel function and a vectorized distance metric.
+
+    Parameters:
+    - grid_vectors: ndarray, grid vectors for which to compute the kernel matrix.
+    - glued_pairs: ndarray, pairs of points that are "glued" together.
+    - thresh: float, threshold value for determining glued points.
+    - kernel_choice: str, the kernel function to use ('Laplace', 'Gaussian', etc.).
+    - sigma: float, parameter for the kernel function.
+    - spike: list or None, spike values to adjust the kernel matrix for glued points.
+    - distance_metric: str, the metric to use for distance calculations.
+
+    Returns:
+    - ndarray: The computed kernel matrix.
+    """
+    distance = compute_distances(grid_vectors, glued_pairs, base_type, thresh)
+    return torch.exp(-distance ** 2 / (2 * sigma ** 2))
+
+    # distances = compute_distances(grid_vectors, grid_vectors, metric=distance_metric)
+
+    # for i in range(n_points):
+    #     for j in range(n_points):
+    #         if kernel_choice=="Laplace":
+    #             kernel_matrix[i, j] = spike[0] * laplace_kernel(grid_vectors[i], grid_vectors[j], sigma)
+    #         else:
+    #             kernel_matrix[i, j] = spike[0] * gaussian_kernel(grid_vectors[i], grid_vectors[j], sigma)
+
+    # for i in range(n_points):
+    #     for g_i in range(len(glued_pairs)):
+    #         if euclidean_distance(grid_vectors[i] - glued_pairs[g_i, 0, :]) <= thresh:
+    #             kernel_matrix[i, i] = kernel_matrix[i, i] + spike[1]
+    #             for j in range(n_points):
+    #                 if euclidean_distance(grid_vectors[j] - glued_pairs[g_i, 1, :]) <= thresh:
+    #                     kernel_matrix[i, j] = kernel_matrix[i, j] + spike[1] * gaussian_kernel(grid_vectors[i] - glued_pairs[g_i, 0, :],
+    #                                                                       grid_vectors[j] - glued_pairs[g_i, 1, :], sigma)
+    #                     kernel_matrix[j, i] = kernel_matrix[j, i] + spike[1] * gaussian_kernel(grid_vectors[i] - glued_pairs[g_i, 0, :],
+    #                                                                       grid_vectors[j] - glued_pairs[g_i, 1, :], sigma)
+    # for i in range(n_points):
+    #     for g_i in range(len(glued_pairs)):
+    #         if np.sqrt(np.sum((grid_vectors[i] - glued_pairs[g_i, 1, :]) ** 2)) <= thresh:
+    #             kernel_matrixatrix[i, i] = kernel_matrix[i, i] + spike[1]
+    #
+    #
+    # return kernel_matrix
+
+
+def split_data(data, train_ratio=0.8):
+    """Splits data into training and testing sets."""
+    n_train = int(len(data) * train_ratio)
+    np.random.shuffle(data)
+    train_set, test_set = data[:n_train], data[n_train:]
+    return train_set, test_set
+
+
+def add_noise(data, noise_std_dev, sphere_restriction=False):
+    """Adds Gaussian noise to the data."""
+    noise = noise_std_dev * np.random.randn(*data.shape)
+    return data + noise
+
+
+def save_datasets(train_inputs, train_labels, test_inputs, test_labels, prefix="manifold_dataset"):
+    """Saves the datasets as NumPy arrays or PyTorch tensors."""
+    # Convert to PyTorch tensors and save (for PyTorch; for NumPy, use np.save)
+    datasets = {
+        "train_inputs": torch.from_numpy(train_inputs),
+        "train_labels": torch.from_numpy(train_labels),
+        "test_inputs": torch.from_numpy(test_inputs),
+        "test_labels": torch.from_numpy(test_labels)
+    }
+    for name, tensor in datasets.items():
+        torch.save(tensor, f"{prefix}_{name}.pt")
+    print(f"Datasets saved with prefix {prefix}.")
+
+
+def save_manifold_data(data, noise_std_dev, train_ratio=0.8, prefix="manifold_dataset"):
+    """
+    Splits the manifold data into training and testing sets, adds noise,
+    and saves the datasets.
+
+    Parameters:
+    - data: ndarray, the clean manifold data.
+    - noise_std_dev: float, standard deviation for the noise to be added.
+    - train_ratio: float, proportion of data to use for training.
+    - prefix: str, prefix for saving the datasets.
+    """
+    # Split the data into training and testing sets
+    train_data, test_data = split_data(data, train_ratio)
+
+    # Add noise to create inputs
+    train_inputs = add_noise(train_data, noise_std_dev)
+    test_inputs = add_noise(test_data, noise_std_dev)
+
+    # Save the datasets
+    save_datasets(train_inputs, train_data, test_inputs, test_data, prefix)
+
     return
 
 
+class ManifoldDataset(Dataset):
+    def __init__(self, prefix, train=True):
+        """
+        Custom dataset for loading manifold data using only a prefix.
+
+        Parameters:
+        - prefix: str, the prefix used to save the datasets.
+        - train: bool, flag to determine whether to load training data or testing data.
+        """
+        self.prefix = prefix
+        self.train = train
+
+        inputs_filename = f"{prefix}_train_inputs.pt" if train else f"{prefix}_test_inputs.pt"
+        labels_filename = f"{prefix}_train_labels.pt" if train else f"{prefix}_test_labels.pt"
+
+        self.inputs = torch.load(inputs_filename)
+        self.labels = torch.load(labels_filename)
+
+    def __len__(self):
+        return len(self.inputs)
+
+    def __getitem__(self, idx):
+        return self.inputs[idx], self.labels[idx]
 
 
+# Example usage
+# train_dataset = ManifoldDataset("manifold_dataset")
+# train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+#
+# test_dataset = ManifoldDataset("manifold_dataset", train=False)
+# test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)

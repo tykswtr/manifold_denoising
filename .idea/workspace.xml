@@ -2,6 +2,26 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="159ac78f-2ece-42e4-9288-80fb0c02001f" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/manifold_gen_old.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/func_view_[0.01, 0.01].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/func_view_[0.01, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/func_view_[0.1, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/func_view_[1, 0.5].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/func_view_[1, 0].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/func_view_[1, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel_[0.01, 0.01].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel_[0.01, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel_[0.1, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel_[1, 0.5].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel_[1, 0].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kernel_[1, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifold_[0.01, 0.01].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifold_[0.01, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifold_[0.1, 1].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifold_[1, 0.5].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifold_[1, 0].png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/manifold_[1, 1].png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/manifold_gen.py" beforeDir="false" afterPath="$PROJECT_DIR$/manifold_gen.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -123,7 +143,8 @@
       <option name="presentableId" value="Default" />
       <updated>1707433112567</updated>
       <workItem from="1707433115430" duration="7322000" />
-      <workItem from="1707505313805" duration="24096000" />
+      <workItem from="1707505313805" duration="24572000" />
+      <workItem from="1708108055753" duration="20763000" />
     </task>
     <servers />
   </component>
@@ -179,10 +200,15 @@
     </state>
     <state width="1398" height="285" key="GridCell.Tab.1.right/0.23.1440.877@0.23.1440.877" timestamp="1708087423787" />
     <state width="2518" height="501" key="GridCell.Tab.1.right/0.23.2560.1417@0.23.2560.1417" timestamp="1707501534713" />
-    <state x="973" y="564" key="com.intellij.ide.util.TipDialog" timestamp="1707433117800">
-      <screen x="0" y="23" width="2560" height="1417" />
+    <state x="547" y="358" key="com.intellij.ide.util.TipDialog" timestamp="1708108598181">
+      <screen x="0" y="23" width="1440" height="877" />
     </state>
+    <state x="547" y="358" key="com.intellij.ide.util.TipDialog/0.23.1440.877@0.23.1440.877" timestamp="1708108598181" />
     <state x="973" y="564" key="com.intellij.ide.util.TipDialog/0.23.2560.1417@0.23.2560.1417" timestamp="1707433117800" />
+    <state x="750" y="196" width="670" height="676" key="search.everywhere.popup" timestamp="1708693044911">
+      <screen x="0" y="0" width="1440" height="900" />
+    </state>
+    <state x="750" y="196" width="670" height="676" key="search.everywhere.popup/0.0.1440.900@0.0.1440.900" timestamp="1708693044911" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/manifold_denoising$manifold_gen.coverage" NAME="manifold_gen Coverage Results" MODIFIED="1707501484871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
