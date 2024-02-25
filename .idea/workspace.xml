@@ -2,27 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="159ac78f-2ece-42e4-9288-80fb0c02001f" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/manifold_gen_old.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/func_view_[0.01, 0.01].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/func_view_[0.01, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/func_view_[0.1, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/func_view_[1, 0.5].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/func_view_[1, 0].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/func_view_[1, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel_[0.01, 0.01].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel_[0.01, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel_[0.1, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel_[1, 0.5].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel_[1, 0].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/kernel_[1, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifold_[0.01, 0.01].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifold_[0.01, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifold_[0.1, 1].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifold_[1, 0.5].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifold_[1, 0].png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/manifold_[1, 1].png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/manifold_gen.py" beforeDir="false" afterPath="$PROJECT_DIR$/manifold_gen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/test.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -144,7 +126,7 @@
       <updated>1707433112567</updated>
       <workItem from="1707433115430" duration="7322000" />
       <workItem from="1707505313805" duration="24572000" />
-      <workItem from="1708108055753" duration="20763000" />
+      <workItem from="1708108055753" duration="28450000" />
     </task>
     <servers />
   </component>
@@ -156,28 +138,32 @@
       <screen x="0" y="23" width="2560" height="1417" />
     </state>
     <state x="1152" y="541" key="#com.intellij.fileTypes.FileTypeChooser/0.23.2560.1417@0.23.2560.1417" timestamp="1708049035782" />
-    <state width="1398" height="139" key="GridCell.Tab.0.bottom" timestamp="1708096915937">
-      <screen x="0" y="23" width="1440" height="877" />
+    <state width="2518" height="148" key="GridCell.Tab.0.bottom" timestamp="1708725457340">
+      <screen x="0" y="0" width="2560" height="1440" />
     </state>
-    <state width="1398" height="71" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1707504098516" />
+    <state width="667" height="148" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1708699890497" />
+    <state width="2518" height="148" key="GridCell.Tab.0.bottom/0.0.2560.1440@0.0.2560.1440" timestamp="1708725457340" />
     <state width="1398" height="139" key="GridCell.Tab.0.bottom/0.23.1440.877@0.23.1440.877" timestamp="1708096915937" />
     <state width="2518" height="139" key="GridCell.Tab.0.bottom/0.23.2560.1417@0.23.2560.1417" timestamp="1708054166600" />
-    <state width="1398" height="139" key="GridCell.Tab.0.center" timestamp="1708096915936">
-      <screen x="0" y="23" width="1440" height="877" />
+    <state width="2518" height="148" key="GridCell.Tab.0.center" timestamp="1708725457339">
+      <screen x="0" y="0" width="2560" height="1440" />
     </state>
-    <state width="1398" height="71" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1707504098516" />
+    <state width="667" height="148" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1708699890496" />
+    <state width="2518" height="148" key="GridCell.Tab.0.center/0.0.2560.1440@0.0.2560.1440" timestamp="1708725457339" />
     <state width="1398" height="139" key="GridCell.Tab.0.center/0.23.1440.877@0.23.1440.877" timestamp="1708096915936" />
     <state width="2518" height="139" key="GridCell.Tab.0.center/0.23.2560.1417@0.23.2560.1417" timestamp="1708054166599" />
-    <state width="1398" height="139" key="GridCell.Tab.0.left" timestamp="1708096915936">
-      <screen x="0" y="23" width="1440" height="877" />
+    <state width="2518" height="148" key="GridCell.Tab.0.left" timestamp="1708725457338">
+      <screen x="0" y="0" width="2560" height="1440" />
     </state>
-    <state width="1398" height="71" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1707504098515" />
+    <state width="667" height="148" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1708699890496" />
+    <state width="2518" height="148" key="GridCell.Tab.0.left/0.0.2560.1440@0.0.2560.1440" timestamp="1708725457338" />
     <state width="1398" height="139" key="GridCell.Tab.0.left/0.23.1440.877@0.23.1440.877" timestamp="1708096915936" />
     <state width="2518" height="139" key="GridCell.Tab.0.left/0.23.2560.1417@0.23.2560.1417" timestamp="1708054166599" />
-    <state width="1398" height="139" key="GridCell.Tab.0.right" timestamp="1708096915937">
-      <screen x="0" y="23" width="1440" height="877" />
+    <state width="2518" height="148" key="GridCell.Tab.0.right" timestamp="1708725457340">
+      <screen x="0" y="0" width="2560" height="1440" />
     </state>
-    <state width="1398" height="71" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1707504098516" />
+    <state width="667" height="148" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1708699890497" />
+    <state width="2518" height="148" key="GridCell.Tab.0.right/0.0.2560.1440@0.0.2560.1440" timestamp="1708725457340" />
     <state width="1398" height="139" key="GridCell.Tab.0.right/0.23.1440.877@0.23.1440.877" timestamp="1708096915937" />
     <state width="2518" height="139" key="GridCell.Tab.0.right/0.23.2560.1417@0.23.2560.1417" timestamp="1708054166600" />
     <state width="1398" height="285" key="GridCell.Tab.1.bottom" timestamp="1708087423790">
@@ -211,8 +197,8 @@
     <state x="750" y="196" width="670" height="676" key="search.everywhere.popup/0.0.1440.900@0.0.1440.900" timestamp="1708693044911" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/manifold_denoising$manifold_gen.coverage" NAME="manifold_gen Coverage Results" MODIFIED="1707501484871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/manifold_denoising$test.coverage" NAME="test Coverage Results" MODIFIED="1708096915929" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/manifold_denoising$manifold_gen.coverage" NAME="manifold_gen Coverage Results" MODIFIED="1708697862972" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/manifold_denoising$test.coverage" NAME="test Coverage Results" MODIFIED="1708725457304" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/manifold_denoising$train.coverage" NAME="train Coverage Results" MODIFIED="1707442417817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

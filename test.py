@@ -19,7 +19,7 @@ import time
 from networks import FC, init_weights
 
 # from manifold_gen import generate_clean, noise_addition
-from manifold_gen import generate_clean, noise_addition
+from manifold_gen import generate_clean, add_noise
 
 import torchvision
 from torch import optim
@@ -85,6 +85,44 @@ def to_var(x):
     return Variable(x).to(device)
 
 
+# Hypothetical parameters for data generation
+n_0 = 3
+n_points = 1000  # Number of points to generate
+d = 2  # Dimensionality of the manifold
+sigma = 1.0  # Standard deviation for the Gaussian kernel
+glue_num = 0  # Number of points to glue together
+base_type = 'rectangle'  # Base manifold type
+# base_type = 'torus'  # Base manifold type
+# base_type = 'sphere'  # Base manifold type
+# base_type = 'ball'  # Base manifold type
+
+method = 'Ker'  # Kernel method for generating data
+# grid_type = 'random'  # Random distribution of points on the manifold
+grid_type = 'uniform'
+sphere_restriction = False  # Not restricting points to a sphere
+
+# Generating the data
+data = generate_clean(n_0, d, n_points, sigma, glue_num, base_type, method, grid_type)
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# Assuming 'data' is your 3D tensor or array of shape (n_points, 3)
+data_np = data.numpy()  # Convert PyTorch tensor to NumPy array if necessary
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(data_np[0, :], data_np[1, :], data_np[2, :])
+
+ax.set_xlabel('X Label')
+ax.set_ylabel('Y Label')
+ax.set_zlabel('Z Label')
+
+plt.show()
+
+# Note: This call assumes that the necessary functions are implemented and correctly integrated.
+
 #Generate Noisy Data
 # n_0: ambient dimension
 # N: number of data point
@@ -117,7 +155,7 @@ print(x.shape)
 
 std = 0.
 
-x = noise_addition(x, std)
+x = add_noise(x, std)
 #
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator

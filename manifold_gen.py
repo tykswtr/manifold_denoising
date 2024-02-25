@@ -32,7 +32,7 @@ def generate_clean(n_0, d, n_points, sigma, glue_num, base_type, method, grid_ty
     grid_vectors = generate_grid(base_type, d, n_points, grid_type)
 
     # generate random pairs of points
-    glued_pairs = generate_random_point_pairs(base_type, d, glue_num, grid_type)
+    glued_pairs = generate_random_point_pairs(base_type, d, glue_num)
 
     return gen_func(n_0, d, n_points, sigma, glued_pairs, grid_vectors, base_type)
 
@@ -82,7 +82,7 @@ def generate_rectangle(n_points, d, grid_type='uniform'):
     #     np.repeat(1, dims)
     # d = len(dims)
     if grid_type == 'uniform':
-        n_points_per_dim = int(torch.ceil(n_points ** (1 / d)))
+        n_points_per_dim = int(math.ceil(n_points ** (1 / d)))
         # Generate a linear space grid for each dimension
         grids = [torch.linspace(-1, 1, n_points_per_dim) for i in range(d)]
         # Cartesian product to form a grid
@@ -100,7 +100,7 @@ def generate_rectangle(n_points, d, grid_type='uniform'):
 def generate_ball(n_points, d=2, grid_type='uniform'):
     radius = 1.0
     if grid_type == 'uniform':
-        volume_ratio = (torch.pi ** (d / 2)) / (math.gamma(d / 2 + 1))  # Volume ratio of ball to cube in d dimensions
+        volume_ratio = (math.pi ** (d / 2)) / (math.gamma(d / 2 + 1))  # Volume ratio of ball to cube in d dimensions
         cube_edge_length = 2 * radius  # The edge length of the cube
         cube_volume = cube_edge_length ** d  # Volume of the cube
         ball_volume = volume_ratio * cube_volume  # Volume of the ball
@@ -144,24 +144,53 @@ def generate_sphere(n_points, d=2, grid_type='uniform'):
 def generate_torus(n_points, d=2, grid_type='uniform'):
     """Generates evenly spaced points on the surface of a d-dimensional torus (n-torus)."""
     if grid_type == 'uniform':
-        angle_grids = [torch.linspace(0, 2 * torch.pi, n_points) for i in range(d)]
+        angle_grids = [torch.linspace(0, 2 * math.pi, n_points) for i in range(d)]
         mesh = torch.meshgrid(angle_grids)
         torus_points = torch.stack(mesh, dim=-1).reshape(-1, d)
     elif grid_type == 'random':
-        torus_points = torch.rand(n_points, d) * 2 * torch.pi
+        torus_points = torch.rand(n_points, d) * 2 * math.pi
     else:
         raise ValueError("Unsupported grid type: {}".format(grid_type))
 
     return torus_points
 
 
+def ensure_positive_definite(kernel_matrix, jitter_initial=1e-6):
+    """
+    Ensures that the kernel matrix is positive definite by adding jitter.
+    """
+    jitter = jitter_initial
+    while True:
+        try:
+            # Attempt Cholesky decomposition to test positive definiteness
+            torch.cholesky(kernel_matrix + torch.eye(kernel_matrix.size(0)) * jitter)
+            print(f"Successful with jitter: {jitter}")
+            return kernel_matrix + torch.eye(kernel_matrix.size(0)) * jitter
+        except RuntimeError:
+            print(f"Increasing jitter: {jitter}")
+            jitter *= 10  # Increase jitter and try again
+            if jitter > 1:
+                raise ValueError("Jitter has become too large. Matrix might not be recoverable.")
+
+
 # Generate Kernel function with smoothness parameter K
 def generate_Ker_func(n_0, d, n_points, sigma, glued_pairs, grid_vectors, base_type, verbose=True):
 
     # Define kernel
-    thresh = 0.1 * torch.sqrt(d)
+    thresh = 0.1 * math.sqrt(d)
 
     kernel_matrix = compute_kernel_matrix(grid_vectors, glued_pairs, base_type, thresh, sigma=sigma)
+
+    eigenvalues, eigenvectors = torch.eig(kernel_matrix, eigenvectors=True)
+    # Accessing the real parts of the eigenvalues
+    real_eigenvalues = eigenvalues[:, 0]  # Correct way to access eigenvalues
+    # Finding the minimum eigenvalue
+    min_eigenvalue = torch.min(real_eigenvalues)
+    print("Minimum Eigenvalue:", min_eigenvalue)
+
+    ker_matrix = ensure_positive_definite(kernel_matrix)
+
+    kernel_matrix += torch.eye(kernel_matrix.size(0)) * 1e-4
 
     if verbose:
         # optional: display the kernel matrix
@@ -173,7 +202,7 @@ def generate_Ker_func(n_0, d, n_points, sigma, glued_pairs, grid_vectors, base_t
         # full_path = f"{folder_path}/{filename}"
         plt.savefig("kernel_matrix"+".png")
 
-    mvn = MultivariateNormal(torch.zeros(n_points), covariance_matrix=kernel_matrix)
+    mvn = MultivariateNormal(torch.zeros(kernel_matrix.shape[0]), covariance_matrix=kernel_matrix)
     data = mvn.sample(sample_shape=(n_0,))  # Generate n_0 samples
 
     return data
@@ -248,7 +277,10 @@ def compute_base_distances(X, Y, metric='euclidean'):
     Returns:
     - distances: Tensor of shape (n_samples_X, n_samples_Y), the distances between each pair of vectors from X and Y.
     """
-    if metric == 'euclidean':
+    # Ensure X, Y are 2-dimensional, even if it represents a single point
+    X = X.unsqueeze(0) if X.dim() == 1 else X
+    Y = Y.unsqueeze(0) if Y.dim() == 1 else Y
+    if metric in ('euclidean', 'rectangle', 'ball'):
         distances = torch.cdist(X, Y, p=2)
     elif metric == 'laplacian':
         distances = torch.cdist(X, Y, p=1)
@@ -258,11 +290,11 @@ def compute_base_distances(X, Y, metric='euclidean'):
         distances = torch.acos(cos_angles)
     elif metric == 'torus':
         # Ensure angles are within [0, 2*pi]
-        X = X % (2 * torch.pi)
-        Y = Y % (2 * torch.pi)
+        X = X % (2 * math.pi)
+        Y = Y % (2 * math.pi)
         # Compute differences in angles, considering periodic boundary conditions
         diff = torch.abs(X.unsqueeze(1) - Y)  # Shape: (n_samples_X, n_samples_Y, d)
-        diff = torch.min(diff, 2 * torch.pi - diff)  # Adjust differences to be within [0, pi]
+        diff = torch.min(diff, 2 * math.pi - diff)  # Adjust differences to be within [0, pi]
         distances = torch.norm(diff, p=2, dim=2)
     else:
         raise ValueError(f"Unsupported metric: {metric}")
@@ -286,7 +318,6 @@ def compute_adjusted_distances(grid_vectors, glued_pairs, metric, thresh):
     adjusted_distances = torch.full((n_points, n_points), float('inf'), device=grid_vectors.device)
 
     for point_a, point_b in glued_pairs:
-
         # Find points close to point_a and point_b
         distances_to_a = compute_base_distances(grid_vectors, point_a, metric)
         distances_to_b = compute_base_distances(grid_vectors, point_b, metric)
@@ -307,7 +338,8 @@ def compute_adjusted_distances(grid_vectors, glued_pairs, metric, thresh):
 def compute_distances(grid_vectors, glued_pairs, base_type, thresh):
     distance = compute_base_distances(grid_vectors, grid_vectors, base_type)
     adjusted_distances = compute_adjusted_distances(grid_vectors, glued_pairs, base_type, thresh)
-    return min(distance, adjusted_distances)
+    return torch.min(distance, adjusted_distances)
+    # return distance
 
 
 def compute_kernel_matrix(grid_vectors, glued_pairs, base_type, thresh, sigma=1.0):
@@ -327,6 +359,7 @@ def compute_kernel_matrix(grid_vectors, glued_pairs, base_type, thresh, sigma=1.
     - ndarray: The computed kernel matrix.
     """
     distance = compute_distances(grid_vectors, glued_pairs, base_type, thresh)
+    print(distance.shape, distance.dtype)
     return torch.exp(-distance ** 2 / (2 * sigma ** 2))
 
     # distances = compute_distances(grid_vectors, grid_vectors, metric=distance_metric)
